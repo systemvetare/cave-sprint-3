@@ -1,15 +1,10 @@
 package se.itu.game.gui;
 
-import static se.itu.game.cave.Room.Direction;
-
-import se.itu.game.cave.IllegalMoveException;
 import se.itu.game.cave.Player;
-import se.itu.game.cave.Room;
-import se.itu.game.cave.RuleBook;
-import se.itu.game.cave.RuleViolationException;
 import se.itu.game.cave.Thing;
 import se.itu.game.cave.init.CaveInitializer;
-import se.itu.game.cave.init.Things;
+import se.itu.game.cave.IllegalMoveException;
+import se.itu.game.cave.RuleViolationException;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -18,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import javax.swing.*;
+
+import static se.itu.game.cave.Room.Direction;
 
 public class MainFrame {
   private JFrame mainFrame;
@@ -42,12 +39,12 @@ public class MainFrame {
   private JPanel thingsPanel;
   private JLabel inventoryLabel;
   private JLabel thingsLabel;
-  private Map<Room.Direction, JButton> buttonMap;
-  
+  private Map<Direction, JButton> buttonMap;
+
   private boolean debug;
-  
+
   private class ThingRenderer<Thing> implements ListCellRenderer<Thing> {
-    
+
     protected DefaultListCellRenderer defaultLCR = new DefaultListCellRenderer();
 
     public Component getListCellRendererComponent(JList<? extends Thing> list,
@@ -66,13 +63,13 @@ public class MainFrame {
       return defaultLCR;
     }
   }
-  
+
   private void debug(Object msg) {
     if (msg != null && debug) {
       System.out.println("DEBUG: " + msg);
     }
   }
-  
+
   private void initComponents() {
     /* Uses the -Ddodebug=true flag */
     debug = System.getProperty("dodebug", "false").equals("false") ? false : true;
@@ -93,7 +90,7 @@ public class MainFrame {
     buttonMap.put(Direction.SOUTH, southButton);
     buttonMap.put(Direction.EAST, eastButton);
     buttonMap.put(Direction.WEST, westButton);
-    
+
     roomInfo    = new JTextArea(20,60);
     messages    = new JLabel();
     top         = new JPanel(new FlowLayout(FlowLayout.LEADING));
@@ -102,7 +99,7 @@ public class MainFrame {
     thingsPanel = new JPanel();
     inventoryPanel = new JPanel();
     thingsLabel = new JLabel("Things in the room");
-    inventoryLabel = new JLabel("Inventory");    
+    inventoryLabel = new JLabel("Inventory");
     renderer = new ThingRenderer<Thing>();
     inventoryModel = new DefaultListModel<Thing>();
     roomThingsModel = new DefaultListModel<Thing>();
@@ -114,47 +111,33 @@ public class MainFrame {
     roomThings = new JList<>(roomThingsModel);
     roomThings.setCellRenderer(renderer);
     roomThings.setPrototypeCellValue(new Thing("Pirate ChestXXXXXXXX"));
-    //addFakeRules();
   }
 
-  private void addFakeRules() {
-    RuleBook
-      .addThingRule(Things
-                    .get("Bird"),
-                    ()->
-                    {
-                      if(player
-                         .getInstance()
-                         .inventory()
-                         .contains(Things.get("Rod"))) {
-                        throw new RuleViolationException("The bird gets scared and you can't take it");
-                      }
-                      if(!player
-                         .getInstance()
-                         .inventory()
-                         .contains(Things.get("Cage"))) {
-                        throw new RuleViolationException("You cannot take the bird right now");
-                      } else {
-                        return true;
-                      }
-                    });
-  }
-  
+
   private void updateButtons() {
-    
-    Room currentRoom = player.currentRoom();
+
     for (Direction dir : Direction.values()) {
-      buttonMap.get(dir).setEnabled(player.canSeeDoorIn(dir));
+      buttonMap.get(dir).setEnabled(Player.getInstance().canSeeDoorIn(dir));
     }
+    /*
+      // another way to do the same thing, requires much more code:
+    if (currentRoom.getRoom(Direction.NORTH) == null) {
+      northButton.setEnabled(false);
+      debug("Disabling north");
+    } else {
+      northButton.setEnabled(true);
+    }
+    // Etc for all the buttons...
+    */
   }
-  
+
   private void updateModels() {
     debug("Updating models");
     // First clear the models for the two lists
     inventoryModel.clear();
     roomThingsModel.clear();
     // Put the Room's things in the JList
-    for (Thing thing : player.currentRoom().things()) {
+    for (Thing thing : player.thingsInCurrentRoom()) {
       roomThingsModel.addElement(thing);
     }
     // Put the Player's things in the JList
@@ -162,7 +145,7 @@ public class MainFrame {
       inventoryModel.addElement(thing);
     }
   }
-  
+
   private void layoutComponents() {
     navigationPanel.setLayout(new GridLayout(3,3));
     navigationPanel.add(new JPanel());
@@ -173,7 +156,7 @@ public class MainFrame {
     navigationPanel.add(eastButton);
     navigationPanel.add(new JPanel());
     navigationPanel.add(southButton);
-    navigationPanel.add(new JPanel());    
+    navigationPanel.add(new JPanel());
     top.add(navigationPanel);
     JScrollPane inventoryScroll = new JScrollPane(inventory);
     JScrollPane roomThingsScroll = new JScrollPane(roomThings);
@@ -194,30 +177,29 @@ public class MainFrame {
   private void updateGui() {
     updateModels();
     updateButtons();
-    // TODO: This call should be the first one!
-    // Why? Because describeCurrentRoom() now triggers the RoomRule!
-    roomInfo.setText(player.describeCurrentRoom());          
+    roomInfo.setText(player.describeCurrentRoom());
   }
 
   private void addListeners() {
-    Room currentRoom = player.currentRoom();
     for (Direction dir : Direction.values()) {
       buttonMap.get(dir).addActionListener( (event) -> {
           try {
             player.go(dir);
             debug(dir + " button pressed");
             updateGui();
-          } catch (IllegalMoveException e) {
+          } catch (RuntimeException e) {
             messages.setText("Bad direction - shouldn't happen.");
+          } catch (IllegalMoveException e) {
+            messages.setText("Bad direction - should have disabled that button.");
           }
         });
     }
     RoomThingsListener roomThingsListener = new RoomThingsListener();
     InventoryListener inventoryListener   = new InventoryListener();
     inventory.addMouseListener(inventoryListener);
-    roomThings.addMouseListener(roomThingsListener);    
+    roomThings.addMouseListener(roomThingsListener);
   }
-  
+
   /* Run this method from main() when you want
    * to setup and show this window.
    */
@@ -248,26 +230,24 @@ public class MainFrame {
           // Make the player take the thing!
           Player.getInstance().takeThing(thing);
           updateModels();
-          messages.setText("");
-        } catch (RuleViolationException ite) {
-          messages.setText("Couldn't take " + thing + ": " + ite.getMessage());
+        } catch (RuleViolationException e) {
+          messages.setText(e.getMessage());
         }
       }
     }
   }
-  
+
   private class InventoryListener extends MouseAdapter {
-    @SuppressWarnings("unchecked")    
+    @SuppressWarnings("unchecked")
     public void mouseClicked(MouseEvent event) {
       if (event.getClickCount() == 2) {
         Thing thing = ((JList<Thing>)event.getSource()).getSelectedValue();
         debug("Click on the inventory's " + thing);
         // Make the player drop the thing!
         Player.getInstance().dropThing(thing);
-        // TODO: Change the below to updateGui() instead.
         updateModels();
       }
     }
   }
-  
+
 }

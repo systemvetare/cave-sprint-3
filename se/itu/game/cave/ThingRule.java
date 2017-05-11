@@ -1,7 +1,5 @@
 package se.itu.game.cave;
 
-public interface ThingRule {
-
-  public boolean apply() throws RuleViolationException;
-  
+public interface ThingRule{
+  public abstract boolean apply() throws RuleViolationException;
 }
