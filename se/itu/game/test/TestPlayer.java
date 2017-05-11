@@ -1,12 +1,13 @@
 package se.itu.game.test;
 
 import se.itu.game.cave.Room;
-import se.itu.game.cave.RuleViolationException;
 import se.itu.game.cave.Thing;
 import se.itu.game.cave.Player;
-import se.itu.game.cave.IllegalMoveException;
 import se.itu.game.cave.init.CaveInitializer;
 import se.itu.game.cave.init.Things;
+
+import se.itu.game.cave.IllegalMoveException;
+import se.itu.game.cave.RuleViolationException;
 
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -22,16 +23,19 @@ public class TestPlayer {
      * The player should now not have the key anymore.
      */
     Player player = Player.getInstance();
-    try {
+    try{
       player.go(Room.Direction.EAST);
-    } catch (IllegalMoveException e) {
-      System.err.println("Couldn't go: " + e.getMessage());
     }
-    try {
+    catch(IllegalMoveException e){
+      System.out.println("Bad direction");
+    }
+    try{
       player.takeThing(Things.get("Skeleton Key"));
-    } catch (RuleViolationException e) {
-      assert false : "Player couldn't take the skeleton key!";
     }
+    catch(RuleViolationException e){
+      System.out.println("Violated a rule");
+    }
+
     assert player.inventory().contains(Things.get("Skeleton Key"))
       : "Player should have the key after picking it up!";
     player.dropThing(Things.get("Skeleton Key"));
@@ -49,22 +53,23 @@ public class TestPlayer {
      * Test that you can't drop a thing you don't have
      */
     Player player = Player.getInstance();
-    try {
+    try{
       player.takeThing(Things.get("Skeleton Key"));
-    } catch (RuleViolationException e) {
-      assert false : "Player couldn't take the skeleton key!";
+    }
+    catch(RuleViolationException e){
+      System.out.println("Violated a rule");
     }
     try {
       player.dropThing(Things.get("Rod"));
       assert false : "Shouldn't be possible to drop a thing the player doesn't have";
     } catch (IllegalArgumentException expected) {}
     // Go back to the first room
-    try {
+    try{
       player.go(Room.Direction.WEST);
-    } catch (IllegalMoveException e) {
-      System.err.println("Couldn't go: " + e.getMessage());
     }
-      
+    catch(IllegalMoveException e){
+      System.out.println("Bad direction");
+    }
   }
 
   private void p3() {
@@ -78,22 +83,29 @@ public class TestPlayer {
       + "review the previous test cases.";
     try {
       for(int i = 0; i < 4; i++) {
-        player.go(Room.Direction.SOUTH);
+        try{
+          player.go(Room.Direction.SOUTH);
+        }
+        catch(IllegalMoveException e){
+          System.out.println("Bad direction");
+        }
       }
-    } catch (IllegalMoveException e) {
-      System.err.println("Couldn't go: " + e.getMessage());
-    }
-    assert player.currentRoom().description().startsWith(TestUtils.SOUTH_4_ROOM_DESCR)
-      : "We're in the wrong room. Run the tests for navigation or "
-      + "review the previous test cases.";
-    assert player.currentRoom().getRoom(Room.Direction.SOUTH) == null
-      : "There should be no room to the South from here.";
-    try {
-      player.go(Room.Direction.SOUTH);
-      assert false : "Shouldn't be able to go in a direction with no connecting Room";
-    } catch (IllegalMoveException expected) {}
+      assert player.currentRoom().description().startsWith(TestUtils.SOUTH_4_ROOM_DESCR)
+        : "We're in the wrong room. Run the tests for navigation or "
+        + "review the previous test cases.";
+      assert player.currentRoom().getRoom(Room.Direction.SOUTH) == null
+        : "There should be no room to the South from here.";
+
+      try{
+        player.go(Room.Direction.SOUTH);
+        assert false : "Shouldn't be able to go in a direction with no connecting Room";
+      }
+      catch(IllegalMoveException e){
+        System.out.println("Bad direction");
+      }
+    } catch (IllegalArgumentException expected) {}
   }
-  
+
   public static void main(String[] args) {
     CaveInitializer.getInstance().initAll();
     TestPlayer test = new TestPlayer();

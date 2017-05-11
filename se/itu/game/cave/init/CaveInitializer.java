@@ -2,6 +2,7 @@ package se.itu.game.cave.init;
 
 import se.itu.game.cave.Player;
 import se.itu.game.cave.Room;
+import se.itu.game.cave.RoomRule;
 import se.itu.game.cave.RuleBook;
 import se.itu.game.cave.RuleViolationException;
 import se.itu.game.cave.Thing;
@@ -218,6 +219,8 @@ public class CaveInitializer {
                              things);
       cave.put(roomId, currentRoom);
     }
+    // The Glass Key shouldn't be there, so let's remove it
+    getRoomById(120).removeThing(Things.get("Glass Key"));
     // Add exits to the rooms
     for (Integer roomID : rooms.keySet()){
       Room thisRoom = cave.get(roomID);
@@ -277,6 +280,40 @@ public class CaveInitializer {
                         return true;
                       }
                     });
+    RuleBook.addRoomRule(getRoomById(19), new RoomRule(getRoomById(19), "There's a Snake blocking the South Exit.") {
+        @Override
+        public void apply() {
+          if(room.things().contains(Things.get("Cage")) &&
+             room.things().contains(Things.get("Bird"))) {
+            this.changeCreatureDescription("There's no Snake here");
+            CaveInitializer.this.getRoomById(19).setConnectingRoom(Room.Direction.SOUTH, getRoomById(29));
+          }
+        }
+      });
+
+    RuleBook.addRoomRule(getRoomById(120), new RoomRule(getRoomById(120), "There's a greedy Dragon here.") {
+        @Override
+        public void apply() {
+          if(room.things().contains(Things.get("Gold")) &&
+             room.things().contains(Things.get("Silver")) &&
+             room.things().contains(Things.get("Jewelry")) &&
+             room.things().contains(Things.get("Diamonds"))) {
+            this.changeCreatureDescription("A Glass Key magically appears. The Dragon left with the valuables.");
+            try {
+              room.removeThing(Things.get("Jewelry"));
+              room.removeThing(Things.get("Gold"));
+              room.removeThing(Things.get("Silver"));
+              room.removeThing(Things.get("Diamonds"));
+              if(!Player.getInstance().inventory().contains(Things.get("Glass Key"))) {
+                room.putThing(Things.get("Glass Key"));
+              }
+            } catch (IllegalArgumentException e) {
+              // The Glass Key is already here for some reason
+            }
+          }
+        }
+      });
+
   }
 
 }

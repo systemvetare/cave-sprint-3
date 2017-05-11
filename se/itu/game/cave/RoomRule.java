@@ -16,7 +16,9 @@ public abstract class RoomRule {
    * One String for the creatureDescription and
    * one Room for the Room this RoomRule applies to.
    */
-  
+   protected String creatureDescription;
+   protected Room room;
+
 
   /**
    * Creates a new RoomRule.
@@ -25,6 +27,8 @@ public abstract class RoomRule {
    */
   public RoomRule(Room room, String creatureDescription) {
     /* Save the parameters in the appropriate instance variables */
+    this.room = room;
+    this.creatureDescription = creatureDescription;
   }
 
   /**
@@ -32,7 +36,6 @@ public abstract class RoomRule {
    * make stuff magically appear, or even Doors to new Rooms appear.
    */
   public abstract void apply();
-
   /**
    * <p>
    * Changes the creatureDescription. Could be used when the rule has taken effect.
@@ -41,6 +44,7 @@ public abstract class RoomRule {
    */
   public void changeCreatureDescription(String newDescription) {
     /* Change the creatureDescription here! */
+    this.creatureDescription = newDescription;
   }
 
   /**
@@ -49,10 +53,11 @@ public abstract class RoomRule {
    * @return The creatureDescription of this RoomRule, e.g. "A Dragon stands in the Room"
    */
   public String creatureDescription() {
-    /* Call apply() and return the creatureDescription 
+    /* Call apply() and return the creatureDescription
      * here...
      */
-    return "";
+    apply();
+    return this.creatureDescription;
   }
-  
+
 }

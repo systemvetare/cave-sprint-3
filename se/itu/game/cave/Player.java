@@ -44,6 +44,7 @@ public class Player /* does not extend People */ {
       throw new IllegalArgumentException("Can't remove: " + thing);
     }
     currentRoom.putThing(thing);
+    RuleBook.getRuleFor(this.currentRoom).apply();
   }
 
   /**
@@ -87,7 +88,7 @@ public class Player /* does not extend People */ {
     currentRoom = newRoom;
   }
   public String describeCurrentRoom(){
-    return this.currentRoom.description();
+    return this.currentRoom.description() + "\n" + RuleBook.getRuleFor(this.currentRoom).creatureDescription();
   }
   public List<Thing> thingsInCurrentRoom(){
     return this.currentRoom.things();

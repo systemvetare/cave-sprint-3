@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.HashMap;
 import javax.swing.*;
 
+import se.itu.game.cave.RuleBook;
+
 import static se.itu.game.cave.Room.Direction;
 
 public class MainFrame {
@@ -175,9 +177,9 @@ public class MainFrame {
   }
 
   private void updateGui() {
+    roomInfo.setText(player.describeCurrentRoom());
     updateModels();
     updateButtons();
-    roomInfo.setText(player.describeCurrentRoom());
   }
 
   private void addListeners() {
@@ -245,7 +247,7 @@ public class MainFrame {
         debug("Click on the inventory's " + thing);
         // Make the player drop the thing!
         Player.getInstance().dropThing(thing);
-        updateModels();
+        updateGui();
       }
     }
   }
